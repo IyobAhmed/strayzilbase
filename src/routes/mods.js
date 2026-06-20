@@ -7,10 +7,15 @@ const { AppError } = require('../middleware/errorHandler');
 
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, status = 'approved', sort = '-createdAt', search } = req.query;
-    const query = { status };
+    // UPDATED: Changed default status from 'approved' to '' (all) 
+    // to make it easier to see your test data immediately.
+    const { page = 1, limit = 12, category, status = '', sort = '-createdAt', search } = req.query;
+    
+    const query = {}; 
+    if (status) query.status = status; 
     if (category) query.category = category;
     if (search) query.$or = [{ title: { $regex: search, $options: 'i' } }, { description: { $regex: search, $options: 'i' } }];
+    
     const mods = await Mod.find(query).populate('author', 'username avatar').sort(sort).limit(limit * 1).skip((page - 1) * limit);
     const count = await Mod.countDocuments(query);
     res.json({ mods, totalPages: Math.ceil(count / limit), currentPage: page, total: count });
